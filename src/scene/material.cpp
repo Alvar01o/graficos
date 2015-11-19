@@ -30,17 +30,51 @@ Vec3d Material::shade( Scene *scene, const ray& r, const isect& i ) const
 	// you'll want to use code that looks something
 	// like this:
 	//
-	// for ( vector<Light*>::const_iterator litr = scene->beginLights(); 
-	// 		litr != scene->endLights(); 
-	// 		++litr )
-	// {
-	// 		Light* pLight = *litr;
-	// 		.
-	// 		.
-	// 		.
-	// }
-
-	return kd(i);
+   /* I = mtrl.ke + mtrl.ka * ILa
+        for each light source Light do:
+        atten = Light -> distanceAttenuation( )
+        L = Light -> getDirection ( )
+        I = I + atten*(diffuse term + specular term)
+        end for
+        return I
+        Thus, the color on the surface will
+vary according to the cosine of the angle between the surface normal and the
+light direction. Note that the vector l is typically assumed not to depend on the
+location of the object. That assumption is equivalent to assuming the light is
+“distant” relative to object size. Such a “distant” light is often called a directional
+light, because its position is specified only by a direction.
+    */
+    Vec3d result;
+    Vec3d Ia = Vec3d(0,0,0);
+    Vec3d Kd = Vec3d(0,0,0);
+    Vec3d Ks = Vec3d(0,0,0);
+    double cosD = 0.0;
+    double cosS = 0.0;
+    double alpha = i.getMaterial().shininess(i);;
+	for ( vector<Light*>::const_iterator litr = scene->beginLights(); 
+        litr != scene->endLights(); 
+        ++litr )
+    {
+        Light* pLight = *litr;
+        
+        cosD = pLight->getDirection(r.at(i.t)) * i.N;
+        Vec3d I = pLight->getDirection(r.at(i.t));
+        I.normalize();
+        Vec3d E = -r.getDirection();
+        E.normalize();
+        Vec3d h = E + I;
+        h.normalize();
+        cosS = i.N*h;
+        if ( cosD >= 0){
+            Kd += kd(i)*cosD;
+        }
+        if ( cosS > 0){
+            Ks += ks(i)*pow(cosS, alpha);
+        }
+    }
+    result = ka(i) + Kd + Ks;
+    result.clamp();
+    return result;
 }
 
 
