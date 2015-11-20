@@ -44,21 +44,29 @@ location of the object. That assumption is equivalent to assuming the light is
 “distant” relative to object size. Such a “distant” light is often called a directional
 light, because its position is specified only by a direction.
     */
-    Vec3d result;
+    
+
+    Vec3d Ie = Vec3d(0,0,0);
     Vec3d Ia = Vec3d(0,0,0);
-    Vec3d Kd = Vec3d(0,0,0);
-    Vec3d Ks = Vec3d(0,0,0);
+    Vec3d temp = Vec3d(0,0,0);
+    Vec3d result = Vec3d(0,0,0);
+    Vec3d Id = Vec3d(0,0,0);
+    Vec3d Is = Vec3d(0,0,0);
     double cosD = 0.0;
     double cosS = 0.0;
-    double alpha = i.getMaterial().shininess(i);;
+    double alpha = i.getMaterial().shininess(i);
+    Vec3d P = r.at(i.t);
 	for ( vector<Light*>::const_iterator litr = scene->beginLights(); 
         litr != scene->endLights(); 
         ++litr )
     {
+        Id = Vec3d(0,0,0);
+        Is = Vec3d(0,0,0);
+
         Light* pLight = *litr;
         
-        cosD = pLight->getDirection(r.at(i.t)) * i.N;
-        Vec3d I = pLight->getDirection(r.at(i.t));
+        cosD = pLight->getDirection(P) * i.N;
+        Vec3d I = pLight->getDirection(P);
         I.normalize();
         Vec3d E = -r.getDirection();
         E.normalize();
@@ -66,13 +74,16 @@ light, because its position is specified only by a direction.
         h.normalize();
         cosS = i.N*h;
         if ( cosD >= 0){
-            Kd += kd(i)*cosD;
+            Id = kd(i)^pLight->getColor(P)*cosD;
         }
         if ( cosS > 0){
-            Ks += ks(i)*pow(cosS, alpha);
+            Is = ks(i)^pLight->getColor(P)*pow(cosS, alpha);
         }
+        temp += (Id + Is)*pLight->distanceAttenuation(P);
     }
-    result = ka(i) + Kd + Ks;
+    Ia =  scene->ambient()^ka(i);
+    Ie = ke(i);
+    result = Ie + Ia + temp;
     result.clamp();
     return result;
 }
