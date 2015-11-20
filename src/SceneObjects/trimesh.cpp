@@ -66,10 +66,57 @@ bool TrimeshFace::intersectLocal( const ray& r, isect& i ) const
     //
     // You should retrieve the vertices using code like this:
     //
-    // const Vec3d& a = parent->vertices[ids[0]];
-    // const Vec3d& b = parent->vertices[ids[1]];
-    // const Vec3d& c = parent->vertices[ids[2]];
-    return false;
+	/*
+		Based on http://www.inmensia.com/articulos/raytracing/planotrianguloycubo.html?pag=2
+	*/
+	//vertices
+	const Vec3d& v1 = parent->vertices[ids[0]];
+	const Vec3d& v2 = parent->vertices[ids[1]];
+	const Vec3d& v3 = parent->vertices[ids[2]];
+
+	//rayo proyectado
+	Vec3d p = r.getPosition();
+	Vec3d d = r.getDirection();
+
+	Vec3d v2_v1 = (v2 - v1);
+	Vec3d v3_v1 = (v3 - v1);
+
+	Vec3d v2_v1_x_v3_v1 = v2_v1^v3_v1; //normal 
+
+	Vec3d n = v2_v1_x_v3_v1;
+
+	v2_v1_x_v3_v1.normalize();
+
+	double d_ = - ((n[0]*v2[0]) + (n[1]*v2[1]) +(n[2]*v2[2]) );
+
+	double denom = ((n[0]*d[0]) + (n[1]*d[1]) + (n[2]*d[2]));
+
+	if(denom == 0 )return false;
+
+	double t = - ((n[0] * p[0]) +(n[1] * p[1]) + (n[2] * p[2]) + d_) / denom;
+
+	double x=p[0] + t*d[0];
+	double y=p[1] + t*d[1];
+	double z=p[2] + t*d[2];
+	Vec3d intersect = Vec3d(x,y,z);
+
+	//s1 = ( (V2 - V1) x (I - V1) ) · N
+	Vec3d vc1 =((v2_v1)^(intersect-v1));
+	double s1 = vc1*n;
+	//s2 = ( (V3 - V2) x (I - V2) ) · N
+	Vec3d vc2 =((v3-v2)^(intersect-v2));
+	double s2 = vc2*n;
+	//s3 = ( (V1 - V3) x (I - V3) ) · N
+	Vec3d vc3 =((v1-v3)^(intersect-v3));
+	double s3 = vc3*n;
+
+	if((s1 > 0 && s2 > 0 && s3 > 0) || (s1 < 0 && s2 < 0 && s3 < 0)) {
+		i.obj = this;
+		i.N = v2_v1_x_v3_v1;
+		i.t = t;
+		return true;
+	}
+	return false;
 }
 
 
