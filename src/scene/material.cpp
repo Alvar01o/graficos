@@ -7,6 +7,27 @@
 using namespace std;
 extern bool debugMode;
 
+Vec3d controlColor(Vec3d color){
+    if (color[0]<0 ){
+        color[0] = 0;
+    }
+    if (color[1]<0){
+        color[1] = 0;
+    }
+    if (color[2]<0){
+        color[2] = 0;
+    }
+    if (color[0]>1.0 ){
+        color[0] = 1;
+    }
+    if (color[1]>1.0){
+        color[1] = 1;
+    }
+    if (color[2]>1.0){
+        color[2] = 1;
+    }
+    return color;
+}
 
 // Apply the Phong model to this point on the surface of the object, returning
 // the color of that point.
@@ -49,12 +70,13 @@ light, because its position is specified only by a direction.
     Vec3d Ie = Vec3d(0,0,0);
     Vec3d Ia = Vec3d(0,0,0);
     Vec3d temp = Vec3d(0,0,0);
+    Vec3d I = Vec3d(0,0,0);
     Vec3d result = Vec3d(0,0,0);
-    Vec3d Id = Vec3d(0,0,0);
-    Vec3d Is = Vec3d(0,0,0);
+    Vec3d Id;
+    Vec3d Is;
     double cosD = 0.0;
     double cosS = 0.0;
-    double alpha = i.getMaterial().shininess(i);
+    double shininess = i.getMaterial().shininess(i);
     Vec3d P = r.at(i.t);
 	for ( vector<Light*>::const_iterator litr = scene->beginLights(); 
         litr != scene->endLights(); 
@@ -62,28 +84,26 @@ light, because its position is specified only by a direction.
     {
         Id = Vec3d(0,0,0);
         Is = Vec3d(0,0,0);
-
         Light* pLight = *litr;
         
         cosD = pLight->getDirection(P) * i.N;
-        Vec3d I = pLight->getDirection(P);
-        I.normalize();
-        Vec3d E = -r.getDirection();
-        E.normalize();
-        Vec3d h = E + I;
+
+        Vec3d dirLight = pLight->getDirection(P);
+        Vec3d dirViewer = -r.getDirection();
+        dirViewer.normalize();
+        Vec3d h = dirLight + dirViewer;
         h.normalize();
-        cosS = i.N*h;
+        cosS = h*i.N;
         if ( cosD >= 0){
-            Id = kd(i)^pLight->getColor(P)*cosD;
+            Id = kd(i)*cosD;
         }
-        if ( cosS > 0){
-            Is = ks(i)^pLight->getColor(P)*pow(cosS, alpha);
-        }
-        temp += (Id + Is)*pLight->distanceAttenuation(P);
+        Is = ks(i)*pow(cosS, shininess);
+        double fatt = pLight->distanceAttenuation(P);
+        I = prod((Id + Is),pLight->getColor(P));
+        temp += prod(I,pLight->shadowAttenuation(P))*fatt ;
     }
-    Ia =  scene->ambient()^ka(i);
-    Ie = ke(i);
-    result = Ie + Ia + temp;
+    Ia =  prod(ka(i), scene->ambient());
+    result = ke(i) + Ia + temp;
     result.clamp();
     return result;
 }

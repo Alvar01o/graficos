@@ -44,6 +44,7 @@ bool Sphere::intersectLocal( const ray& r, isect& i ) const
 				return false;
 			}
 			Vec3d normal( P[0], P[1],  z);
+            normal.normalize();
 			i.obj = this;
 			i.setUVCoordinates( Vec2d(1.0, 1.0) );		
 			i.t = t1;
@@ -57,12 +58,12 @@ bool Sphere::intersectLocal( const ray& r, isect& i ) const
 		return false;
 	}
 	double z = P[2];
-
-	i.t = t2;//-(sqrt((P[0]*(P[0])) + (P[1]*(P[1]))))
 	Vec3d normal( P[0], P[1], z );
-	i.N = normal;
+    normal.normalize();
 	i.obj = this;
 	i.setUVCoordinates( Vec2d(1.0, 1.0) );	
+    i.t = t2;//-(sqrt((P[0]*(P[0])) + (P[1]*(P[1]))))
+    i.N = normal;
 	return true;
 }
 

@@ -39,7 +39,8 @@ double PointLight::distanceAttenuation( const Vec3d& P ) const
 	// point P.  For now, we assume no attenuation and just return 1.0
     Vec3d vectorDistance = position - P;
     double dL = vectorDistance.length();
-    return 1.0 / ( constantTerm + linearTerm * dL + quadraticTerm * dL*dL);
+    double att =  1.0 / (constantTerm + linearTerm * dL + quadraticTerm * dL * dL);
+    return (att > 1) ? 1 : att;
 }
 
 Vec3d PointLight::getColor( const Vec3d& P ) const
@@ -60,6 +61,7 @@ Vec3d PointLight::shadowAttenuation(const Vec3d& P) const
 {
     // YOUR CODE HERE:
     // You should implement shadow-handling code here.
-
+    Vec3d direction = getDirection(P);
+    
     return Vec3d(1,1,1);
 }

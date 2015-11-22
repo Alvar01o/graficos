@@ -24,7 +24,9 @@ using namespace std;
 // Use this variable to decide if you want to print out
 // debugging messages.  Gets set in the "trace single ray" mode
 // in TraceGLWindow, for example.
+#define PI 3.141592653589793238462643383279502f
 bool debugMode = false;
+double indexOfAir = 1.0003;
 
 // Trace a top-level ray through normalized window coordinates (x,y)
 // through the projection plane, and out into the scene.  All we do is
@@ -44,14 +46,52 @@ Vec3d RayTracer::trace( double x, double y )
 	return ret;
 }
 
+Vec3d reflectDirection( isect i, const ray& r){
+    Vec3d _d = -r.getDirection();
+    double theta = _d*i.N;
+    Vec3d reflectDir = -_d+2*i.N*theta;
+    reflectDir.normalize();
+    return reflectDir;
+}
+
+Vec3d refractDirection( isect i, const ray& ray, double n_i, double n_t){
+    Vec3d n = i.N;
+    Vec3d l = ray.getDirection();
+    double r = n_i / n_t;
+    double c = -n * l;
+
+    return r*l + (r*c - sqrt(1 - r*r*(1-c*c)))*n;
+}
+
+bool rayIsEnteringObject(isect i, const ray& r){
+    Vec3d d = r.getDirection();
+    if (-d*i.N > 0)
+        return true; //entering
+    if (d*i.N > 0)
+        return false; //leaving
+    return true;
+}
+
+bool notTIR(isect i, const ray& r, double n_i, double n_t ){
+    Vec3d d = r.getDirection();
+    double angleCritic = asin(n_t/n_i);
+    double angle_i = asin(-d*i.N);
+    if (n_t > n_i || angle_i > angleCritic){
+         return false;
+    } else {
+        return true;
+    }
+}
+
 // Do recursive ray tracing!  You'll want to insert a lot of code here
 // (or places called from here) to handle reflection, refraction, etc etc.
 Vec3d RayTracer::traceRay( const ray& r, 
 	const Vec3d& thresh, int depth )
 {
 	isect i;
-
-	if( scene->intersect( r, i ) ) {
+    
+    Vec3d I = Vec3d( 0.0, 0.0, 0.0 );
+    if( depth <= traceUI->getDepth() && scene->intersect( r, i ) ) {
 		// YOUR CODE HERE
 
 		// An intersection occured!  We've got work to do.  For now,
@@ -64,7 +104,30 @@ Vec3d RayTracer::traceRay( const ray& r,
 		// rays.
 
 		const Material& m = i.getMaterial();
-		return m.shade(scene, r, i);
+        I = m.shade(scene, r, i);
+
+        //reflection
+        Vec3d R = reflectDirection(i,r);
+        ray newRayReflect( r.at(i.t), R, ray::REFLECTION );
+        I += prod(i.getMaterial().kr(i), traceRay( newRayReflect, Vec3d(1.0,1.0,1.0), depth+1)); //I=I + mtrl.kr*traceRay(scene, Q, R)   
+        //refraction
+        double n_i = 0;
+        double n_t = 0;
+        if (rayIsEnteringObject(i, r)){
+            n_i = indexOfAir;
+            n_t = i.getMaterial().index(i);
+        } else {
+            n_i = i.getMaterial().index(i);
+            n_t = indexOfAir;
+        }
+        if (notTIR(i, r, n_i, n_t)){
+            Vec3d T = refractDirection(i, r, n_i, n_t);
+            ray newRayRefract( r.at(i.t), T, ray::REFRACTION );
+            Vec3d temporal = traceRay(newRayRefract, Vec3d(1.0,1.0,1.0), depth+1);
+            I += prod(i.getMaterial().kt(i), temporal);
+        }
+        
+        return I;
 	
 	} else {
 		// No intersection.  This ray travels to infinity, so we color
