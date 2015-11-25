@@ -85,7 +85,6 @@ light, because its position is specified only by a direction.
         Id = Vec3d(0,0,0);
         Is = Vec3d(0,0,0);
         Light* pLight = *litr;
-        
         cosD = pLight->getDirection(P) * i.N;
 
         Vec3d dirLight = pLight->getDirection(P);
@@ -97,10 +96,12 @@ light, because its position is specified only by a direction.
         if ( cosD >= 0){
             Id = kd(i)*cosD;
         }
-        Is = ks(i)*pow(cosS, shininess);
+        if ( cosS >= 0){
+            Is = ks(i)*pow(cosS, shininess);
+        }
         double fatt = pLight->distanceAttenuation(P);
-        I = prod((Id + Is),pLight->getColor(P));
-        temp += prod(I,pLight->shadowAttenuation(P))*fatt ;
+        I = prod((Id + Is),pLight->getColor(P)*fatt);
+        temp += prod(I,pLight->shadowAttenuation(P)) ;
     }
     Ia =  prod(ka(i), scene->ambient());
     result = ke(i) + Ia + temp;

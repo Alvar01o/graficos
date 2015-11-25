@@ -59,8 +59,8 @@ Vec3d refractDirection( isect i, const ray& ray, double n_i, double n_t){
     Vec3d l = ray.getDirection();
     double r = n_i / n_t;
     double c = -n * l;
-
-    return r*l + (r*c - sqrt(1 - r*r*(1-c*c)))*n;
+    //T = (I / n21) + ( ( (-I · N) / n21) - SQRT(1 + ( ( (-I · N)^2 - 1) / n21^2) ) ) * N
+    return  r*l + (r*c - sqrt(1 - r*r*(1-c*c)))*n;
 }
 
 bool rayIsEnteringObject(isect i, const ray& r){
@@ -72,11 +72,13 @@ bool rayIsEnteringObject(isect i, const ray& r){
     return true;
 }
 
-bool notTIR(isect i, const ray& r, double n_i, double n_t ){
-    Vec3d d = r.getDirection();
-    double angleCritic = asin(n_t/n_i);
-    double angle_i = asin(-d*i.N);
-    if (n_t > n_i || angle_i > angleCritic){
+bool notTIR(isect i, const ray& ray, double n_i, double n_t ){
+    Vec3d n = i.N;
+    Vec3d l = ray.getDirection();
+    double r = n_i / n_t;
+    double c = -n * l;
+    double discriminante = 1 - r*r*(1-c*c);
+    if (discriminante < 0){
          return false;
     } else {
         return true;

@@ -49,6 +49,9 @@ bool Sphere::intersectLocal( const ray& r, isect& i ) const
 			i.setUVCoordinates( Vec2d(1.0, 1.0) );		
 			i.t = t1;
 			i.N = normal;
+            if (r.getDirection()*i.N > 0){
+                i.N = -normal;
+            }
 			return true;
 //		}
 	}
@@ -64,6 +67,9 @@ bool Sphere::intersectLocal( const ray& r, isect& i ) const
 	i.setUVCoordinates( Vec2d(1.0, 1.0) );	
     i.t = t2;//-(sqrt((P[0]*(P[0])) + (P[1]*(P[1]))))
     i.N = normal;
+    if (r.getDirection()*i.N > 0){
+        i.N = -normal;
+    }
 	return true;
 }
 
