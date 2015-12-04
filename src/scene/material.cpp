@@ -54,16 +54,16 @@ Vec3d Material::shade( Scene *scene, const ray& r, const isect& i ) const
    /* I = mtrl.ke + mtrl.ka * ILa
         for each light source Light do:
         atten = Light -> distanceAttenuation( )
-        L = Light -> getDirection ( )
-        I = I + atten*(diffuse term + specular term)
-        end for
-        return I
-        Thus, the color on the surface will
-vary according to the cosine of the angle between the surface normal and the
-light direction. Note that the vector l is typically assumed not to depend on the
-location of the object. That assumption is equivalent to assuming the light is
-“distant” relative to object size. Such a “distant” light is often called a directional
-light, because its position is specified only by a direction.
+			L = Light -> getDirection ( )
+			I = I + atten*(diffuse term + specular term)
+			end for
+			return I
+			Thus, the color on the surface will
+	vary according to the cosine of the angle between the surface normal and the
+	light direction. Note that the vector l is typically assumed not to depend on the
+	location of the object. That assumption is equivalent to assuming the light is
+	“distant” relative to object size. Such a “distant” light is often called a directional
+	light, because its position is specified only by a direction.
     */
     
 

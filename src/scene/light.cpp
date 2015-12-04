@@ -61,7 +61,9 @@ Vec3d PointLight::shadowAttenuation(const Vec3d& P) const
 {
     // YOUR CODE HERE:
     // You should implement shadow-handling code here.
-    Vec3d direction = getDirection(P);
+    Vec3d vectorDistance = position - P;
+    double dL = vectorDistance.length();
+	Vec3d direction = getDirection(P);
     
     return Vec3d(1,1,1);
 }
