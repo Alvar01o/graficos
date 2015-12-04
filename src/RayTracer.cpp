@@ -106,26 +106,27 @@ Vec3d RayTracer::traceRay( const ray& r,
 		
 		const Material& m = i.getMaterial();
         I = m.shade(scene, r, i);
-	Vec3d D_ = Vec3d(0,0,0);
-	//shadow
-	for ( vector<Light*>::const_iterator litr = scene->beginLights(); 
-        litr != scene->endLights(); 
-        ++litr )
-    {
-        Light* pLight = *litr;
-		Vec3d R_ = -pLight->getDirection(r.at(i.t) );
-		ray newRayShaDow( r.at(i.t), R_, ray::SHADOW );
-		D_ += traceRay( newRayShaDow, Vec3d(1.0,1.0,1.0), depth+1);
-	}
-	if(D_!=Vec3d(0,0,0)){
-		return 		Vec3d(0,0,0);
-	}
+		Vec3d D_ = Vec3d(0,0,0);
+		//shadow
+		for ( vector<Light*>::const_iterator litr = scene->beginLights(); 
+			litr != scene->endLights(); 
+			++litr )
+		{
+			Light* pLight = *litr;
+//			Vec3d R_ = -pLight->getDirection(r.at(i.t) );
+			Vec3d R_ = -pLight->getDirection(i.N);
+			ray newRayShaDow( r.at(i.t), R_, ray::SHADOW );
+			D_ += traceRay( newRayShaDow, Vec3d(1.0,1.0,1.0), depth+1);
+		}
+
+		if(D_!=Vec3d(0,0,0)){
+//			return Vec3d(0,0,0);
+		}
 
 		//reflection
         Vec3d R = reflectDirection(i,r);
         ray newRayReflect( r.at(i.t), R, ray::REFLECTION );
         I += prod(i.getMaterial().kr(i), traceRay( newRayReflect, Vec3d(1.0,1.0,1.0), depth+1)); //I=I + mtrl.kr*traceRay(scene, Q, R)   
-
 		//refraction
         double n_i = 0;
         double n_t = 0;
